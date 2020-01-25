@@ -11,6 +11,12 @@ enum alt_keycodes {
     SND_SLEEP,              // Send sleep ctrl + shit + power to the computer
 };
 
+// RGB Matrix timeout feature
+#define RBG_MATRIX_TIMEOUT 2  // in minutes
+static uint16_t idle_timer      = 0;
+static uint8_t  halfmin_counter = 0;
+static bool     rgb_matrix_on   = false;
+
 keymap_config_t keymap_config;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -31,7 +37,21 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 void matrix_init_user(void){};
 
 // Runs constantly in the background, in a loop.
-void matrix_scan_user(void){};
+void matrix_scan_user(void) {
+    // idle_timer needs to be set one time
+    if (idle_timer == 0) idle_timer = timer_read();
+
+    if (rgb_matrix_on && timer_elapsed(idle_timer) > 30000) {
+        halfmin_counter++;
+        idle_timer = timer_read();
+    }
+
+    if (rgb_matrix_on && halfmin_counter >= RBG_MATRIX_TIMEOUT * 2) {
+        rgb_matrix_disable_noeeprom();
+        rgb_matrix_on   = false;
+        halfmin_counter = 0;
+    }
+};
 
 void suspend_power_down_keymap_user(void) { rgb_matrix_set_suspend_state(true); }
 
@@ -43,6 +63,15 @@ void suspend_wakeup_init_keymap_user(void) { rgb_matrix_set_suspend_state(false)
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     static uint32_t key_timer;
+
+    if (record->event.pressed) {
+        if (rgb_matrix_on == false) {
+            rgb_matrix_enable_noeeprom();
+            rgb_matrix_on = true;
+        }
+        idle_timer      = timer_read();
+        halfmin_counter = 0;
+    }
 
     switch (keycode) {
         case U_T_AUTO:
@@ -109,6 +138,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case SND_SLEEP:
             if (record->event.pressed) {
                 SEND_STRING(SS_DOWN(X_LGUI) SS_DOWN(X_LCTRL) SS_DOWN(X_Q) SS_UP(X_LGUI) SS_UP(X_LCTRL) SS_UP(X_Q));
+                rgb_matrix_disable_noeeprom();
+                rgb_matrix_on = false;
             }
             return false;
         default:
