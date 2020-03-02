@@ -60,7 +60,7 @@ void matrix_scan_user(void) {
     }
 
     if (rgb_matrix_on && halfmin_counter >= RBG_MATRIX_TIMEOUT * 2) {
-        rgb_matrix_disable_noeeprom();
+        rgb_matrix_disable();
         rgb_matrix_on   = false;
         halfmin_counter = 0;
     }
@@ -79,7 +79,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (record->event.pressed) {
         if (rgb_matrix_on == false) {
-            rgb_matrix_enable_noeeprom();
+            rgb_matrix_enable();
             rgb_matrix_on = true;
         }
         idle_timer      = timer_read();
@@ -139,11 +139,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     } break;
                     case LED_FLAG_UNDERGLOW: {
                         rgb_matrix_set_flags(LED_FLAG_NONE);
-                        rgb_matrix_disable_noeeprom();
+                        rgb_matrix_disable();
                     } break;
                     default: {
                         rgb_matrix_set_flags(LED_FLAG_ALL);
-                        rgb_matrix_enable_noeeprom();
+                        rgb_matrix_enable();
                     } break;
                 }
             }
@@ -151,7 +151,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case SND_SLEEP:
             if (record->event.pressed) {
                 SEND_STRING(SS_DOWN(X_LGUI) SS_DOWN(X_LCTRL) SS_DOWN(X_Q) SS_UP(X_LGUI) SS_UP(X_LCTRL) SS_UP(X_Q));
-                rgb_matrix_disable_noeeprom();
+                rgb_matrix_disable();
                 rgb_matrix_on = false;
             }
             return false;
